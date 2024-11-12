@@ -159,9 +159,8 @@
 
             // Save data as CSV
             var saveData = {
-                type: 'fullscreen',
-                message: "",
-                button_label: "You're all done! Click here to finish"
+                type: 'html-keyboard-response',
+                stimulus: 'You are all done! Press any key to finish.',
                 on_finish: function() {
                     jsPsych.data.get().localSave('csv', 'experiment_data_subject_' + subjectNumber + '_order_' + orderFile + '.csv');
                 }
