@@ -53,12 +53,13 @@
             }
 
             // Start Screen: HTML keyboard response to start the experiment
-            var startScreen = {
-                type: 'html-keyboard-response',
-                stimulus: '<h1>Welcome!</h1><p>Press any key to begin.</p>',
-                prompt: "<p>Press any key to begin</p>"
-            };
-            timeline.push(startScreen);
+              var welcome = {
+                type: "fullscreen",
+                message: "",
+                button_label: "Start",
+                delay_after: 250
+  }
+  timeline.push(welcome);
 
             // Training Trial: Fullscreen video without response (ends when video/audio is done)
             function createTrainingTrial(trialData) {
