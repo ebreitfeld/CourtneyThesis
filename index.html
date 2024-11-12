@@ -69,6 +69,7 @@
                     stimulus: trialData.video_path,
                     choices: jsPsych.NO_KEYS,  // No keypress required
                     response_ends_trial: false, // Don't require a response to end the trial
+                    trial_ends_after_audio: true
                     prompt: "",  // No prompt needed for training trials
                     on_start: function() {
                         // Play the audio when the trial starts
