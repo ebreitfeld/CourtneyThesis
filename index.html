@@ -16,27 +16,22 @@
 </head>
 <body>
     <script>
-        // Function to save data - this needs to be implemented
         function save_data(subject, order, csvData) {
             console.log('Data saving would happen here');
             // Implement your data saving logic here
         }
 
-        // Extract Subject Number and Order from URL
         const urlParams = new URLSearchParams(window.location.search);
         const subjectNumber = urlParams.get('subject');
         const orderFile = urlParams.get('order');
 
-        // Validate URL parameters
         if (!subjectNumber || !orderFile) {
             alert("Error: Subject number and order are required in the URL.");
             throw new Error("Missing subject or order information.");
         }
 
-        // Set the CSV file path
         const csvFilePath = `https://ebreitfeld.github.io/CourtneyThesis/central_data_${orderFile}.csv`;
 
-        // Load and parse CSV data
         Papa.parse(csvFilePath, {
             download: true,
             header: true,
@@ -58,14 +53,13 @@
         function runExperiment(centralData) {
             const timeline = [];
 
-            // Audio player function with error handling
             function playAudio(audioFilePath) {
+                if (!audioFilePath) return null;
                 const audio = new Audio(audioFilePath);
                 audio.onerror = () => console.error(`Error loading audio: ${audioFilePath}`);
                 return audio.play().catch(e => console.error('Audio playback failed:', e));
             }
 
-            // Welcome/fullscreen
             const welcome = {
                 type: "fullscreen",
                 message: "Welcome to the experiment. Click 'Start' to begin in fullscreen mode.",
@@ -74,34 +68,30 @@
             };
             timeline.push(welcome);
 
-            // Training Trial
             function createTrainingTrial(trialData) {
                 return {
                     type: 'video-keyboard-response',
-                    stimulus: [trialData.video_path], // Wrap in array as required by jsPsych
+                    sources: [trialData.video_path],
                     choices: jsPsych.NO_KEYS,
                     response_ends_trial: false,
-                    width: window.innerWidth, // Make video fullscreen
-                    height: window.innerHeight,
-                    trial_duration: null, // Will end when video ends
-                    on_load: function() {
+                    width: 800,
+                    height: 600,
+                    autoplay: true,
+                    controls: false,
+                    trial_ends_after_video: true,
+                    on_start: function(trial) {
                         if (trialData.audio_path) {
                             playAudio(trialData.audio_path);
                         }
                     },
                     on_finish: function(data) {
-                        Object.assign(data, {
-                            trial_type: 'training',
-                            subject: subjectNumber,
-                            order: orderFile,
-                            video_path: trialData.video_path,
-                            audio_path: trialData.audio_path
-                        });
+                        data.trial_type = 'training';
+                        data.video_path = trialData.video_path;
+                        data.audio_path = trialData.audio_path;
                     }
                 };
             }
 
-            // Practice Trial
             function createPracticeTrial(trialData) {
                 return {
                     type: 'image-button-response',
@@ -112,61 +102,53 @@
                         top: ${trialData.button_position_y}px; 
                         left: ${trialData.button_position_x}px;">Click here</button>`,
                     response_ends_trial: true,
-                    stimulus_width: window.innerWidth,
-                    stimulus_height: window.innerHeight,
-                    on_load: function() {
+                    stimulus_height: 600,
+                    maintain_aspect_ratio: true,
+                    on_start: function(trial) {
                         if (trialData.audio_path) {
                             playAudio(trialData.audio_path);
                         }
                     },
                     on_finish: function(data) {
-                        Object.assign(data, {
-                            trial_type: 'practice',
-                            correct: data.response === trialData.correct_response,
-                            subject: subjectNumber,
-                            order: orderFile,
-                            image_path: trialData.image_path,
-                            button_position: {
-                                x: trialData.button_position_x,
-                                y: trialData.button_position_y
-                            }
-                        });
+                        data.trial_type = 'practice';
+                        data.image_path = trialData.image_path;
+                        data.button_position = {
+                            x: trialData.button_position_x,
+                            y: trialData.button_position_y
+                        };
                     }
                 };
             }
 
-            // Test Trial
             function createTestTrial(trialData) {
                 return {
                     type: 'image-button-response',
                     stimulus: trialData.background_image,
                     choices: ['Left', 'Right'],
                     button_html: [
-                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 200px; bottom: 100px; cursor: pointer;">`,
-                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 200px; bottom: 100px; cursor: pointer;">`
+                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 200px; bottom: 100px; cursor: pointer; height: 200px;">`,
+                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 200px; bottom: 100px; cursor: pointer; height: 200px;">`
                     ],
                     response_ends_trial: true,
-                    stimulus_width: window.innerWidth,
-                    stimulus_height: window.innerHeight,
-                    on_load: function() {
+                    stimulus_height: 600,
+                    maintain_aspect_ratio: true,
+                    on_start: function(trial) {
                         if (trialData.audio_path) {
                             playAudio(trialData.audio_path);
                         }
                     },
                     on_finish: function(data) {
-                        Object.assign(data, {
-                            trial_type: 'test',
-                            correct: data.response === trialData.correct_response,
-                            subject: subjectNumber,
-                            order: orderFile,
-                            background_image: trialData.background_image,
-                            overlay_images: [trialData.overlay_image_1, trialData.overlay_image_2]
-                        });
+                        data.trial_type = 'test';
+                        data.correct = (data.response === 0 && trialData.correct_response === 'button1') ||
+                                     (data.response === 1 && trialData.correct_response === 'button2');
+                        data.background_image = trialData.background_image;
+                        data.overlay_image_1 = trialData.overlay_image_1;
+                        data.overlay_image_2 = trialData.overlay_image_2;
+                        data.expected_response = trialData.correct_response;
                     }
                 };
             }
 
-            // Create trials from CSV data
             centralData.forEach(trialData => {
                 const trialCreators = {
                     'training': createTrainingTrial,
@@ -182,7 +164,6 @@
                 }
             });
 
-            // End screen and data saving
             const saveData = {
                 type: 'html-keyboard-response',
                 stimulus: '<p>Experiment complete! Press any key to finish.</p>',
@@ -192,20 +173,26 @@
             };
             timeline.push(saveData);
 
-            // Initialize experiment
             jsPsych.init({
                 timeline: timeline,
                 on_finish: function() {
                     console.log("Experiment complete!");
                 },
-                on_trial_finish: function() {
-                    // Ensure we stay in fullscreen
-                    if (!document.fullscreenElement) {
-                        document.documentElement.requestFullscreen().catch(e => 
-                            console.error('Error attempting to enable fullscreen:', e)
-                        );
-                    }
-                }
+                show_preload_progress_bar: true,
+                preload_images: centralData
+                    .filter(trial => trial.image_path || trial.background_image || trial.overlay_image_1 || trial.overlay_image_2)
+                    .flatMap(trial => [
+                        trial.image_path,
+                        trial.background_image,
+                        trial.overlay_image_1,
+                        trial.overlay_image_2
+                    ].filter(Boolean)),
+                preload_video: centralData
+                    .filter(trial => trial.video_path)
+                    .map(trial => trial.video_path),
+                preload_audio: centralData
+                    .filter(trial => trial.audio_path)
+                    .map(trial => trial.audio_path)
             });
         }
     </script>
