@@ -133,11 +133,11 @@
                     stimulus: trialData.background_image,
                     choices: ['Left', 'Right'],
                     button_html: [
-                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 200px; bottom: 300px; cursor: pointer; height: 400px;">`,
-                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 200px; bottom: 300px; cursor: pointer; height: 400px;">`
+                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 100px; bottom: 300px; cursor: pointer; height: 300px;">`,
+                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 100px; bottom: 300px; cursor: pointer; height: 300px;">`
                     ],
                     response_ends_trial: true,
-                    stimulus_height: 720,
+                    stimulus_height: 600,
                     maintain_aspect_ratio: true,
                     on_start: function(trial) {
                         if (trialData.audio_path) {
