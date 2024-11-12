@@ -102,7 +102,7 @@
                         top: ${trialData.button_position_y}px; 
                         left: ${trialData.button_position_x}px;">Click here</button>`,
                     response_ends_trial: true,
-                    stimulus_height: '100%',
+                    stimulus_height: 720,
                     maintain_aspect_ratio: true,
                     on_start: function(trial) {
                         if (trialData.audio_path) {
@@ -126,11 +126,11 @@
                     stimulus: trialData.background_image,
                     choices: ['Left', 'Right'],
                     button_html: [
-                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 200px; bottom: 300px; cursor: pointer; height: 200px;">`,
-                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 200px; bottom: 300px; cursor: pointer; height: 200px;">`
+                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 200px; bottom: 300px; cursor: pointer; height: 400px;">`,
+                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 200px; bottom: 300px; cursor: pointer; height: 400px;">`
                     ],
                     response_ends_trial: true,
-                    stimulus_height: '100%',
+                    stimulus_height: 720,
                     maintain_aspect_ratio: true,
                     on_start: function(trial) {
                         if (trialData.audio_path) {
