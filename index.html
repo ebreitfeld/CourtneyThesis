@@ -64,6 +64,11 @@
 
             // Training Trial: Fullscreen video without response (ends when video/audio is done)
             function createTrainingTrial(trialData) {
+                console.log("Video path for trial:", trialData.video_path);  // Check if the video path is valid
+                if (!trialData.video_path) {
+                    console.error("Error: Missing video path for this trial.");
+                    return {};  // Don't proceed with creating the trial if there's no video path
+            }
                 return {
                     type: 'video-keyboard-response',  // or 'video-response' depending on preference
                     stimulus: trialData.video_path,
