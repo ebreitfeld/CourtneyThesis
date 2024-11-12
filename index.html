@@ -162,7 +162,7 @@
                 type: 'html-keyboard-response',
                 stimulus: 'You are all done! Press any key to finish.',
                 on_finish: function() {
-                    jsPsych.data.get().localSave('csv', 'experiment_data_subject_' + subjectNumber + '_order_' + orderFile + '.csv');
+                    save_data(subjectNumber, orderFile, jsPsych.data.get().csv());
                 }
             };
             timeline.push(saveData);
@@ -175,6 +175,7 @@
                 }
             });
         }
+        
     </script>
 </body>
 </html>
