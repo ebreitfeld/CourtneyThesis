@@ -102,17 +102,25 @@
                         width: ${trialData.button_width}px;
                         height: ${trialData.button_height}px;
                         top: ${trialData.button_position_y}px; 
-                        left: ${trialData.button_position_x}px;"></button>`,
-                        additional_css: `
-                            .jspsych-btn {
-                                opacity: 0;
-                                background: none !important;
-                                border: none !important;
-                                }
-                            .jspych-btn:hover {
-                                background: none !important;
-                                opacity: 0;
-                                }
+                        left: ${trialData.button_position_x}px;
+                        opacity: 0;
+                        background-color: transparent !important;
+                        border: none !important;
+                        outline: none !important;
+                        box-shadow: none !important;"></button>`,
+                    additional_css: `
+                        button.jspsych-btn {
+                            opacity: 0 !important;
+                            background-color: transparent !important;
+                            border: none !important;
+                            outline: none !important;
+                            box-shadow: none !important;
+                        }
+                        button.jspsych-btn:hover {
+                            background-color: transparent !important;
+                            opacity: 0 !important;
+                            color: transparent !important;
+                        }
                             `,
                     response_ends_trial: true,
                     stimulus_height: 720,
