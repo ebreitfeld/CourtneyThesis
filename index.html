@@ -5,178 +5,209 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Experiment with jsPsych</title>
     <!-- Include jsPsych libraries -->
-    <link rel="stylesheet" href="jspsych-6.1.0/css/jspsych.css",type="text/css"> </link>
-    <script src="jspsych-6.1.0/jspsych.js"> </script>
+    <link rel="stylesheet" href="jspsych-6.1.0/css/jspsych.css" type="text/css">
+    <script src="jspsych-6.1.0/jspsych.js"></script>
     <script src="jspsych-6.1.0/plugins/jspsych-video-keyboard-response.js"></script>
     <script src="jspsych-6.1.0/plugins/jspsych-image-button-response.js"></script>
     <script src="jspsych-6.1.0/plugins/jspsych-html-keyboard-response.js"></script> 
     <script src="jspsych-6.1.0/plugins/jspsych-image-keyboard-response.js"></script>
     <script src="jspsych-6.1.0/plugins/jspsych-fullscreen.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.2.0/papaparse.min.js"></script> <!-- PapaParse library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.2.0/papaparse.min.js"></script>
 </head>
 <body>
     <script>
-        // 1. Extract Subject Number and Order from URL
+        // Function to save data - this needs to be implemented
+        function save_data(subject, order, csvData) {
+            console.log('Data saving would happen here');
+            // Implement your data saving logic here
+        }
+
+        // Extract Subject Number and Order from URL
         const urlParams = new URLSearchParams(window.location.search);
         const subjectNumber = urlParams.get('subject');
-        const orderFile = urlParams.get('order');  // Get the order from the URL
-        
-        // If either parameter is missing, throw an error
+        const orderFile = urlParams.get('order');
+
+        // Validate URL parameters
         if (!subjectNumber || !orderFile) {
             alert("Error: Subject number and order are required in the URL.");
             throw new Error("Missing subject or order information.");
         }
 
-        // 2. Set the correct CSV file based on the order value
-        const csvFilePath = `https://ebreitfeld.github.io/CourtneyThesis/central_data_${orderFile}.csv`;  // Dynamically select the CSV file
-        
-        // 3. Load and parse the selected CSV data asynchronously using PapaParse
+        // Set the CSV file path
+        const csvFilePath = `https://ebreitfeld.github.io/CourtneyThesis/central_data_${orderFile}.csv`;
+
+        // Load and parse CSV data
         Papa.parse(csvFilePath, {
             download: true,
-            header: true, // Treat the first row as the header
+            header: true,
             dynamicTyping: true,
             complete: function(results) {
-                // Now we have the CSV data in 'results.data' (an array of objects)
-                const centralData = results.data;
-                runExperiment(centralData); // Call the function to run the experiment
+                if (results.errors.length > 0) {
+                    console.error('CSV parsing errors:', results.errors);
+                    alert('Error loading experiment data');
+                    return;
+                }
+                runExperiment(results.data);
+            },
+            error: function(error) {
+                console.error('CSV loading error:', error);
+                alert('Error loading experiment data');
             }
         });
 
-        // 4. Function to create trials based on CSV data
         function runExperiment(centralData) {
-            // Define experiment timeline
-            var timeline = [];
+            const timeline = [];
 
-            // Function to play the audio file specified in the CSV
+            // Audio player function with error handling
             function playAudio(audioFilePath) {
-                var audio = new Audio(audioFilePath);
-                audio.play();
+                const audio = new Audio(audioFilePath);
+                audio.onerror = () => console.error(`Error loading audio: ${audioFilePath}`);
+                return audio.play().catch(e => console.error('Audio playback failed:', e));
             }
 
-            // Start Screen: HTML keyboard response to start the experiment
-              var welcome = {
+            // Welcome/fullscreen
+            const welcome = {
                 type: "fullscreen",
-                message: "",
+                message: "Welcome to the experiment. Click 'Start' to begin in fullscreen mode.",
                 button_label: "Start",
                 delay_after: 250
-  };
-  timeline.push(welcome);
+            };
+            timeline.push(welcome);
 
-            // Training Trial: Fullscreen video without response (ends when video/audio is done)
+            // Training Trial
             function createTrainingTrial(trialData) {
                 return {
-                    type: 'video-keyboard-response',  // or 'video-response' depending on preference
-                    stimulus: trialData.video_path,
-                    choices: jsPsych.NO_KEYS,  // No keypress required
-                    response_ends_trial: false, // Don't require a response to end the trial
-                    trial_ends_after_audio: true,
-                    //prompt: "",  // No prompt needed for training trials
-                    on_start: function() {
-                        // Play the audio when the trial starts
+                    type: 'video-keyboard-response',
+                    stimulus: [trialData.video_path], // Wrap in array as required by jsPsych
+                    choices: jsPsych.NO_KEYS,
+                    response_ends_trial: false,
+                    width: window.innerWidth, // Make video fullscreen
+                    height: window.innerHeight,
+                    trial_duration: null, // Will end when video ends
+                    on_load: function() {
                         if (trialData.audio_path) {
                             playAudio(trialData.audio_path);
                         }
                     },
                     on_finish: function(data) {
-                        // Save relevant trial information to the data
-                        data.correct = null;  // No correctness check needed for training trials
-                        data.subject = subjectNumber; // Add subject number to trial data
-                        data.order = orderFile; // Add order file info to trial data
-                        data.video_path = trialData.video_path; // Add video path
-                        data.audio_path = trialData.audio_path; // Add audio path
+                        Object.assign(data, {
+                            trial_type: 'training',
+                            subject: subjectNumber,
+                            order: orderFile,
+                            video_path: trialData.video_path,
+                            audio_path: trialData.audio_path
+                        });
                     }
                 };
             }
 
-            // Practice Trial: Fullscreen image with one button overlay
+            // Practice Trial
             function createPracticeTrial(trialData) {
                 return {
                     type: 'image-button-response',
                     stimulus: trialData.image_path,
-                    choices: ['button1'], // Only one button for practice trials
-                    button_html: '<button style="position: absolute; top: ' + trialData.button_position_y + 'px; left: ' + trialData.button_position_x + 'px;">Click me</button>',
+                    choices: ['Click here'],
+                    button_html: `<button class="jspsych-btn" 
+                        style="position: absolute; 
+                        top: ${trialData.button_position_y}px; 
+                        left: ${trialData.button_position_x}px;">Click here</button>`,
                     response_ends_trial: true,
-                    on_start: function() {
-                        // Play the audio when the trial starts
+                    stimulus_width: window.innerWidth,
+                    stimulus_height: window.innerHeight,
+                    on_load: function() {
                         if (trialData.audio_path) {
                             playAudio(trialData.audio_path);
                         }
                     },
                     on_finish: function(data) {
-                        // Save relevant trial information to the data
-                        data.correct = (data.response == trialData.correct_response);
-                        data.subject = subjectNumber; // Add subject number to trial data
-                        data.order = orderFile; // Add order file info to trial data
-                        data.image_path = trialData.image_path; // Add image path
-                        data.button_position_x = trialData.button_position_x; // Add button position info
-                        data.button_position_y = trialData.button_position_y; // Add button position info
+                        Object.assign(data, {
+                            trial_type: 'practice',
+                            correct: data.response === trialData.correct_response,
+                            subject: subjectNumber,
+                            order: orderFile,
+                            image_path: trialData.image_path,
+                            button_position: {
+                                x: trialData.button_position_x,
+                                y: trialData.button_position_y
+                            }
+                        });
                     }
                 };
             }
 
-            // Test Trial: Fullscreen background image with two buttons
+            // Test Trial
             function createTestTrial(trialData) {
                 return {
                     type: 'image-button-response',
                     stimulus: trialData.background_image,
-                    choices: ['button1', 'button2'],
-                    button_html: function(choice) {
-                        if (choice === 'button1') {
-                            return '<img src="' + trialData.overlay_image_1 + '" style="position: absolute; left: 200px; bottom: 100px;">';
-                        } else {
-                            return '<img src="' + trialData.overlay_image_2 + '" style="position: absolute; right: 200px; bottom: 100px;">';
-                        }
-                    },
+                    choices: ['Left', 'Right'],
+                    button_html: [
+                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 200px; bottom: 100px; cursor: pointer;">`,
+                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 200px; bottom: 100px; cursor: pointer;">`
+                    ],
                     response_ends_trial: true,
-                    on_start: function() {
-                        // Play the audio when the trial starts
+                    stimulus_width: window.innerWidth,
+                    stimulus_height: window.innerHeight,
+                    on_load: function() {
                         if (trialData.audio_path) {
                             playAudio(trialData.audio_path);
                         }
                     },
                     on_finish: function(data) {
-                        // Save relevant trial information to the data
-                        data.correct = (data.response == trialData.correct_response);
-                        data.subject = subjectNumber; // Add subject number to trial data
-                        data.order = orderFile; // Add order file info to trial data
-                        data.background_image = trialData.background_image; // Add background image path
-                        data.overlay_image_1 = trialData.overlay_image_1; // Add overlay image 1
-                        data.overlay_image_2 = trialData.overlay_image_2; // Add overlay image 2
+                        Object.assign(data, {
+                            trial_type: 'test',
+                            correct: data.response === trialData.correct_response,
+                            subject: subjectNumber,
+                            order: orderFile,
+                            background_image: trialData.background_image,
+                            overlay_images: [trialData.overlay_image_1, trialData.overlay_image_2]
+                        });
                     }
                 };
             }
 
-            // Loop through the CSV data and add trials to the timeline
-            centralData.forEach(function(trialData) {
-                if (trialData.trial_type === 'training') {
-                    timeline.push(createTrainingTrial(trialData)); // Use the no-response video trial
-                } else if (trialData.trial_type === 'practice') {
-                    timeline.push(createPracticeTrial(trialData));
-                } else if (trialData.trial_type === 'test') {
-                    timeline.push(createTestTrial(trialData));
+            // Create trials from CSV data
+            centralData.forEach(trialData => {
+                const trialCreators = {
+                    'training': createTrainingTrial,
+                    'practice': createPracticeTrial,
+                    'test': createTestTrial
+                };
+                
+                const createTrial = trialCreators[trialData.trial_type];
+                if (createTrial) {
+                    timeline.push(createTrial(trialData));
+                } else {
+                    console.error(`Unknown trial type: ${trialData.trial_type}`);
                 }
             });
 
-
-            // Save data as CSV
-            var saveData = {
+            // End screen and data saving
+            const saveData = {
                 type: 'html-keyboard-response',
-                stimulus: 'You are all done! Press any key to finish.',
+                stimulus: '<p>Experiment complete! Press any key to finish.</p>',
                 on_finish: function() {
                     save_data(subjectNumber, orderFile, jsPsych.data.get().csv());
                 }
             };
             timeline.push(saveData);
 
-            // Start the experiment
+            // Initialize experiment
             jsPsych.init({
                 timeline: timeline,
                 on_finish: function() {
                     console.log("Experiment complete!");
+                },
+                on_trial_finish: function() {
+                    // Ensure we stay in fullscreen
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(e => 
+                            console.error('Error attempting to enable fullscreen:', e)
+                        );
+                    }
                 }
             });
         }
-        
     </script>
 </body>
 </html>
