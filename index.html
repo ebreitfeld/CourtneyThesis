@@ -62,7 +62,7 @@
 
             const welcome = {
                 type: "fullscreen",
-                message: "Welcome to the experiment. Click 'Start' to begin in fullscreen mode.",
+                message: "Welcome! Click 'Start' to Play.",
                 button_label: "Start",
                 delay_after: 250
             };
@@ -74,8 +74,8 @@
                     sources: [trialData.video_path],
                     choices: jsPsych.NO_KEYS,
                     response_ends_trial: false,
-                    width: 800,
-                    height: 600,
+                    width: '100%',
+                    height: '100%',
                     autoplay: true,
                     controls: false,
                     trial_ends_after_video: true,
@@ -102,7 +102,7 @@
                         top: ${trialData.button_position_y}px; 
                         left: ${trialData.button_position_x}px;">Click here</button>`,
                     response_ends_trial: true,
-                    stimulus_height: 600,
+                    stimulus_height: '100%',
                     maintain_aspect_ratio: true,
                     on_start: function(trial) {
                         if (trialData.audio_path) {
@@ -126,11 +126,11 @@
                     stimulus: trialData.background_image,
                     choices: ['Left', 'Right'],
                     button_html: [
-                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 200px; bottom: 100px; cursor: pointer; height: 200px;">`,
-                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 200px; bottom: 100px; cursor: pointer; height: 200px;">`
+                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 200px; bottom: 300px; cursor: pointer; height: 200px;">`,
+                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 200px; bottom: 300px; cursor: pointer; height: 200px;">`
                     ],
                     response_ends_trial: true,
-                    stimulus_height: 600,
+                    stimulus_height: '100%',
                     maintain_aspect_ratio: true,
                     on_start: function(trial) {
                         if (trialData.audio_path) {
