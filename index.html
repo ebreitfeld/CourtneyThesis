@@ -106,8 +106,12 @@
                         additional_css: `
                             .jspsych-btn {
                                 opacity: 0;
-                                background: none;
-                                border: none;
+                                background: none !important;
+                                border: none !important;
+                                }
+                            .jspych-btn:hover {
+                                background: none !important;
+                                opacity: 0;
                                 }
                             `,
                     response_ends_trial: true,
