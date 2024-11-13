@@ -4,19 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Experiment with jsPsych</title>
-    <!-- Include jsPsych libraries -->
-    <link rel="stylesheet" href="jspsych-6.1.0/css/jspsych.css" type="text/css">
-    <script src="jspsych-6.1.0/jspsych.js"></script>
-    <script src="jspsych-6.1.0/plugins/jspsych-video-keyboard-response.js"></script>
-    <script src="jspsych-6.1.0/plugins/jspsych-image-button-response.js"></script>
-    <script src="jspsych-6.1.0/plugins/jspsych-html-keyboard-response.js"></script> 
-    <script src="jspsych-6.1.0/plugins/jspsych-image-keyboard-response.js"></script>
-    <script src="jspsych-6.1.0/plugins/jspsych-fullscreen.js"></script>
+    <!-- Updated to jsPsych 7.x -->
+    <script src="https://unpkg.com/jspsych@7.3.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-video-keyboard-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-image-button-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.1.2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.2.0/papaparse.min.js"></script>
-    <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
+    <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe@1.0.0"></script>
+    <link href="https://unpkg.com/jspsych@7.3.3/css/jspsych.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
     <script>
+        // Initialize jsPsych
+        const jsPsych = initJsPsych({
+            on_finish: function() {
+                console.log("Experiment complete!");
+                document.body.innerHTML = '<div style="text-align:center; margin-top:30px;"><h2>Thank you for participating!</h2><p>The experiment is now complete.</p></div>';
+            }
+        });
 
         const urlParams = new URLSearchParams(window.location.search);
         const subjectNumber = urlParams.get('subject');
@@ -61,7 +67,7 @@
             }
 
             const welcome = {
-                type: "fullscreen",
+                type: jsPsychFullscreen,
                 message: "Welcome! Click 'Start' to Play.",
                 button_label: "Start",
                 delay_after: 250
@@ -70,9 +76,9 @@
 
             function createTrainingTrial(trialData) {
                 return {
-                    type: 'video-keyboard-response',
-                    sources: [trialData.video_path],
-                    choices: jsPsych.NO_KEYS,
+                    type: jsPsychVideoKeyboardResponse,
+                    stimulus: [trialData.video_path],
+                    choices: "NO_KEYS",
                     response_ends_trial: false,
                     width: '100%',
                     height: '100%',
@@ -94,7 +100,7 @@
 
             function createPracticeTrial(trialData) {
                 return {
-                    type: 'image-button-response',
+                    type: jsPsychImageButtonResponse,
                     stimulus: trialData.image_path,
                     choices: ['Click here'],
                     button_html: `<button class="jspsych-btn" 
@@ -108,20 +114,7 @@
                         border: none !important;
                         outline: none !important;
                         box-shadow: none !important;"></button>`,
-                    additional_css: `
-                        button.jspsych-btn {
-                            opacity: 0 !important;
-                            background-color: transparent !important;
-                            border: none !important;
-                            outline: none !important;
-                            box-shadow: none !important;
-                        }
-                        button.jspsych-btn:hover {
-                            background-color: transparent !important;
-                            opacity: 0 !important;
-                            color: transparent !important;
-                        }
-                            `,
+                    css_classes: ['custom-trial'],
                     response_ends_trial: true,
                     stimulus_height: 720,
                     maintain_aspect_ratio: true,
@@ -129,6 +122,23 @@
                         if (trialData.audio_path) {
                             playAudio(trialData.audio_path);
                         }
+                        // Add custom CSS
+                        const style = document.createElement('style');
+                        style.innerHTML = `
+                            .custom-trial button.jspsych-btn {
+                                opacity: 0 !important;
+                                background-color: transparent !important;
+                                border: none !important;
+                                outline: none !important;
+                                box-shadow: none !important;
+                            }
+                            .custom-trial button.jspsych-btn:hover {
+                                background-color: transparent !important;
+                                opacity: 0 !important;
+                                color: transparent !important;
+                            }
+                        `;
+                        document.head.appendChild(style);
                     },
                     on_finish: function(data) {
                         data.trial_type = 'practice';
@@ -143,7 +153,7 @@
 
             function createTestTrial(trialData) {
                 return {
-                    type: 'image-button-response',
+                    type: jsPsychImageButtonResponse,
                     stimulus: trialData.background_image,
                     choices: ['Left', 'Right'],
                     button_html: [
@@ -185,38 +195,18 @@
                 }
             });
 
+            // Save data using DataPipe
             const save_data = {
-                type: 'pipe',
+                type: jsPsychPipe,
                 action: "save",
                 experiment_id: "PYbvnSUEzFsj", // Your experiment ID
                 filename: filename,
                 data_string: () => jsPsych.data.get().csv()
             };
-            timeline.push(save_data); // Add save_data to timeline
+            timeline.push(save_data);
 
-            jsPsych.init({
-                timeline: timeline,
-                on_finish: function() {
-                    console.log("Experiment complete!");
-                    // You might want to show a completion message to participants
-                    document.body.innerHTML = '<div style="text-align:center; margin-top:30px;"><h2>Great job!</h2><p>You are all done.</p></div>';
-                },
-                show_preload_progress_bar: true,
-                preload_images: centralData
-                    .filter(trial => trial.image_path || trial.background_image || trial.overlay_image_1 || trial.overlay_image_2)
-                    .flatMap(trial => [
-                        trial.image_path,
-                        trial.background_image,
-                        trial.overlay_image_1,
-                        trial.overlay_image_2
-                    ].filter(Boolean)),
-                preload_video: centralData
-                    .filter(trial => trial.video_path)
-                    .map(trial => trial.video_path),
-                preload_audio: centralData
-                    .filter(trial => trial.audio_path)
-                    .map(trial => trial.audio_path)
-            });
+            // Start the experiment
+            jsPsych.run(timeline);
         }
     </script>
 </body>
