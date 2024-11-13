@@ -24,12 +24,6 @@
             }
         });
 
-        // Initialize the pipe plugin
-        const pipe = initJsPsychPipe({
-            experimentID: "PYbvnSUEzFsj",
-            projectID: "YOUR_PROJECT_ID" // Add your project ID if required
-        });
-
         const urlParams = new URLSearchParams(window.location.search);
         const subjectNumber = urlParams.get('subject');
         const orderFile = urlParams.get('order');
@@ -202,13 +196,13 @@
             });
 
             // Save data using DataPipe
-            const save_data = {
-                type: pipe,
+              const save_data = {
+                type: jsPsychPipe,
                 action: "save",
-                experiment_id: "PYbvnSUEzFsj", // Your experiment ID
+                experiment_id: "PYbvnSUEzFsj",
                 filename: filename,
-                data_string: () => jsPsych.data.get().csv()
-            };
+                data_string: ()=>jsPsych.data.get().csv()
+              };
             timeline.push(save_data);
 
             // Start the experiment
