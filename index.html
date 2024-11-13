@@ -16,10 +16,93 @@
 </head>
 <body>
     <script>
-        function save_data(subject, order, csvData) {
-            console.log('Data saving would happen here');
-            // Implement your data saving logic here
-        }
+    function save_data(subject, order, csvData) {
+    // OSF API configuration
+    const OSF_TOKEN = 'bNVaIGJfrxzUFmO7amVhcWmYIXaUL1hkxAw6DL9V9jNkc6zOCDlOid0c3X4lO15MkobxGH';  // Replace with your OSF token
+    const PROJECT_ID = '2hnzx'; // Replace with your OSF project ID
+    const STORAGE_NAME = 'osfstorage';    // Default OSF storage provider
+
+    // Generate a filename based on subject and order
+    const filename = `subject_${subject}_order_${order}_${Date.now()}.csv`;
+    
+    // Create a Blob from the CSV data
+    const blob = new Blob([csvData], { type: 'text/csv' });
+    
+    // First, we need to get an upload URL from OSF
+    const getUploadUrl = () => {
+        const uploadUrlEndpoint = `https://api.osf.io/v2/nodes/${PROJECT_ID}/files/`;
+        
+        return fetch(uploadUrlEndpoint, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${OSF_TOKEN}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                data: {
+                    type: 'files',
+                    attributes: {
+                        name: filename,
+                        provider: STORAGE_NAME
+                    }
+                }
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        });
+    };
+
+    // Function to upload the file using the obtained upload URL
+    const uploadFile = (uploadUrl) => {
+        return fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${OSF_TOKEN}`,
+                'Content-Type': 'text/csv',
+            },
+            body: blob
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Upload failed with status: ${response.status}`);
+            }
+            return response;
+        });
+    };
+
+    // Execute the upload process
+    return getUploadUrl()
+        .then(data => {
+            if (!data.data.links || !data.data.links.upload) {
+                throw new Error('Upload URL not found in OSF response');
+            }
+            return uploadFile(data.data.links.upload);
+        })
+        .then(() => {
+            console.log('Data successfully saved to OSF');
+            alert('Data successfully saved!');
+        })
+        .catch(error => {
+            console.error('Error saving data to OSF:', error);
+            alert('Error saving data. Please contact the experimenter.');
+            
+            // Fallback: Save to local storage in case of failure
+            const fallbackKey = `failed_save_${Date.now()}`;
+            localStorage.setItem(fallbackKey, JSON.stringify({
+                subject: subject,
+                order: order,
+                data: csvData,
+                timestamp: new Date().toISOString()
+            }));
+
+            // Log failed save details to console
+            console.log('Data saved to local storage with key:', fallbackKey);
+        });
+}
 
         const urlParams = new URLSearchParams(window.location.search);
         const subjectNumber = urlParams.get('subject');
