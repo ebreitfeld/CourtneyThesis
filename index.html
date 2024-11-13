@@ -13,126 +13,13 @@
     <script src="jspsych-6.1.0/plugins/jspsych-image-keyboard-response.js"></script>
     <script src="jspsych-6.1.0/plugins/jspsych-fullscreen.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.2.0/papaparse.min.js"></script>
+    <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
 </head>
 <body>
     <script>
-function save_data(subject, order, csvData) {
-    // OSF API configuration
-    const OSF_TOKEN = 'lgXAIWmRYjBpzAksXWPKwWKKurejPPluEJL8UY6ZAtAA8ENb0kAsTCyY7oDG1W1VqXzyyE';  // Add your raw token here without 'Bearer'
-    const PROJECT_ID = '2hnzx';
-    const STORAGE_NAME = 'osfstorage';
-
-    // Format the authorization header with Bearer prefix
-    const authHeader = `Bearer ${OSF_TOKEN}`;
-
-    // Generate a filename based on subject and order
-    const filename = `subject_${subject}_order_${order}_${Date.now()}.csv`;
-    
-    // Create a Blob from the CSV data
-    const blob = new Blob([csvData], { type: 'text/csv' });
-    
-    // Get upload URL from OSF
-    const getUploadUrl = () => {
-        const uploadUrlEndpoint = `https://api.osf.io/v2/nodes/${PROJECT_ID}/files/osfstorage/`;
         
-        console.log('Requesting upload URL from:', uploadUrlEndpoint);
-        
-        return fetch(uploadUrlEndpoint, {
-            method: 'POST',
-            headers: {
-                'Authorization': authHeader,  // Using formatted auth header
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                data: {
-                    type: 'files',
-                    attributes: {
-                        name: filename,
-                        kind: 'file'
-                    }
-                }
-            })
-        })
-        .then(response => {
-            console.log('Upload URL Response status:', response.status);
-            if (!response.ok) {
-                return response.text().then(text => {
-                    console.log('Error response body:', text);
-                    throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
-                });
-            }
-            return response.json();
-        });
-    };
-
-    // Function to upload the file using the obtained upload URL
-    const uploadFile = (uploadUrl) => {
-        console.log('Attempting to upload to URL:', uploadUrl);
-        
-        return fetch(uploadUrl, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'text/csv',
-            },
-            body: blob
-        })
-        .then(response => {
-            console.log('File upload response status:', response.status);
-            if (!response.ok) {
-                return response.text().then(text => {
-                    console.log('Upload error response body:', text);
-                    throw new Error(`Upload failed with status: ${response.status}, body: ${text}`);
-                });
-            }
-            return response;
-        });
-    };
-
-    // Execute the upload process
-    return getUploadUrl()
-        .then(data => {
-            console.log('Received OSF response:', data);
-            const uploadUrl = data.data?.links?.upload;
-            if (!uploadUrl) {
-                console.log('Full OSF response:', data);
-                throw new Error('Upload URL not found in OSF response');
-            }
-            return uploadFile(uploadUrl);
-        })
-        .then(() => {
-            console.log('Data successfully saved to OSF');
-            alert('Data successfully saved!');
-        })
-        .catch(error => {
-            console.error('Detailed error saving data to OSF:', error);
-            
-            // Create a more informative error message
-            let errorMessage = 'Error saving data. ';
-            if (error.message.includes('401')) {
-                errorMessage += 'Authentication failed - check your OSF token.';
-            } else if (error.message.includes('404')) {
-                errorMessage += 'Project not found - check your project ID.';
-            } else if (error.message.includes('403')) {
-                errorMessage += 'Permission denied - check your token permissions.';
-            } else {
-                errorMessage += error.message;
-            }
-            
-            alert(errorMessage + '\n\nCheck the console (F12) for details.');
-            
-            // Fallback: Save to local storage in case of failure
-            const fallbackKey = `failed_save_${Date.now()}`;
-            localStorage.setItem(fallbackKey, JSON.stringify({
-                subject: subject,
-                order: order,
-                data: csvData,
-                timestamp: new Date().toISOString(),
-                error: error.message
-            }));
-
-            console.log('Data saved to local storage with key:', fallbackKey);
-        });
-}
+        // Generate a filename based on subject and order
+        const filename = `subject_${subject}_order_${order}_${Date.now()}.csv`;
 
         const urlParams = new URLSearchParams(window.location.search);
         const subjectNumber = urlParams.get('subject');
@@ -298,13 +185,13 @@ function save_data(subject, order, csvData) {
                 }
             });
 
-            const saveData = {
-                type: 'html-keyboard-response',
-                stimulus: '<p>Experiment complete! Press any key to finish.</p>',
-                on_finish: function() {
-                    save_data(subjectNumber, orderFile, jsPsych.data.get().csv());
-                }
-            };
+              const save_data = {
+                type: jsPsychPipe,
+                action: "save",
+                experiment_id: "PYbvnSUEzFsj",
+                filename: filename,
+                data_string: ()=>jsPsych.data.get().csv()
+              };
             timeline.push(saveData);
 
             jsPsych.init({
