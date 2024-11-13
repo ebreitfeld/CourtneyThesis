@@ -17,9 +17,6 @@
 </head>
 <body>
     <script>
-        
-        // Generate a filename based on subject and order
-        const filename = `subject_${subject}_order_${order}_${Date.now()}.csv`;
 
         const urlParams = new URLSearchParams(window.location.search);
         const subjectNumber = urlParams.get('subject');
@@ -29,6 +26,9 @@
             alert("Error: Subject number and order are required in the URL.");
             throw new Error("Missing subject or order information.");
         }
+
+        // Generate a filename based on subject and order
+        const filename = `subject_${subjectNumber}_order_${orderFile}_${Date.now()}.csv`;
 
         const csvFilePath = `https://ebreitfeld.github.io/CourtneyThesis/central_data_${orderFile}.csv`;
 
@@ -185,19 +185,21 @@
                 }
             });
 
-              const save_data = {
-                type: jsPsychPipe,
+            const save_data = {
+                type: 'pipe',
                 action: "save",
-                experiment_id: "PYbvnSUEzFsj",
+                experiment_id: "PYbvnSUEzFsj", // Your experiment ID
                 filename: filename,
-                data_string: ()=>jsPsych.data.get().csv()
-              };
-            timeline.push(saveData);
+                data_string: () => jsPsych.data.get().csv()
+            };
+            timeline.push(save_data); // Add save_data to timeline
 
             jsPsych.init({
                 timeline: timeline,
                 on_finish: function() {
                     console.log("Experiment complete!");
+                    // You might want to show a completion message to participants
+                    document.body.innerHTML = '<div style="text-align:center; margin-top:30px;"><h2>Great job!</h2><p>You are all done.</p></div>';
                 },
                 show_preload_progress_bar: true,
                 preload_images: centralData
