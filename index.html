@@ -34,7 +34,8 @@
         }
 
         // Generate a filename based on subject and order
-        const filename = `subject_${subjectNumber}_order_${orderFile}_${Date.now()}.csv`;
+        const currentDate = new Date();
+        const filename = `subject_${subjectNumber}_order_${orderFile}_${currentDate.toISOString().slice(0, 19).replace('T', '_')}.csv`;
 
         const csvFilePath = `https://ebreitfeld.github.io/CourtneyThesis/central_data_${orderFile}.csv`;
 
