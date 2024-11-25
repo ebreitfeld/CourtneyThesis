@@ -161,34 +161,59 @@
                 };
             }
 
-            function createTestTrial(trialData) {
-                return {
-                    type: jsPsychImageButtonResponse,
-                    stimulus: trialData.background_image,
-                    choices: ['Left', 'Right'],
-                    button_html: [
-                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 100px; bottom: 300px; cursor: pointer; height: 300px;">`,
-                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 100px; bottom: 300px; cursor: pointer; height: 300px;">`
-                    ],
-                    response_ends_trial: true,
-                    stimulus_height: 550,
-                    maintain_aspect_ratio: true,
-                    on_start: function(trial) {
-                        if (trialData.audio_path) {
-                            playAudio(trialData.audio_path);
+        function createTestTrial(trialData) {
+            return {
+                type: jsPsychImageButtonResponse,
+                stimulus: trialData.background_image,
+                choices: ['Left', 'Right'],
+                button_html: [
+                    `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 100px; bottom: 300px; cursor: not-allowed; height: 300px; pointer-events: none;">`,
+                    `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 100px; bottom: 300px; cursor: not-allowed; height: 300px; pointer-events: none;">`
+                ],
+                response_ends_trial: true,
+                stimulus_height: 550,
+                maintain_aspect_ratio: true,
+                on_load: function(trial) {
+                    // Play audio and track its completion
+                    if (trialData.audio_path) {
+                        const audio = new Audio(trialData.audio_path);
+                        audio.onloadedmetadata = function() {
+                            // Prevent button clicks until audio finishes
+                            trial.response_allowed = false;
                         }
-                    },
-                    on_finish: function(data) {
-                        data.trial_type = 'test';
-                        data.correct = (data.response === 0 && trialData.correct_response === 'button1') ||
-                                     (data.response === 1 && trialData.correct_response === 'button2');
-                        data.background_image = trialData.background_image;
-                        data.overlay_image_1 = trialData.overlay_image_1;
-                        data.overlay_image_2 = trialData.overlay_image_2;
-                        data.expected_response = trialData.correct_response;
+                        audio.onplay = function() {
+                            // Set a flag when audio starts playing
+                            trial.audio_start_time = performance.now();
+                        }
+                        audio.onended = function() {
+                            // Enable buttons when audio ends
+                            const buttons = document.querySelectorAll('.jspsych-image-button-response-button');
+                            buttons.forEach(button => {
+                                button.style.cursor = 'pointer';
+                                button.style.pointerEvents = 'auto';
+                            });
+                            trial.response_allowed = true;
+                            trial.audio_end_time = performance.now();
+                        }
+                        audio.play().catch(e => console.error('Audio playback failed:', e));
                     }
-                };
-            }
+                },
+                on_finish: function(data) {
+                    data.trial_type = 'test';
+                    data.correct = (data.response === 0 && trialData.correct_response === 'button1') ||
+                                 (data.response === 1 && trialData.correct_response === 'button2');
+                    data.background_image = trialData.background_image;
+                    data.overlay_image_1 = trialData.overlay_image_1;
+                    data.overlay_image_2 = trialData.overlay_image_2;
+                    data.expected_response = trialData.correct_response;
+                    
+                    // Calculate reaction time relative to audio end
+                    if (data.rt !== null && this.audio_end_time) {
+                        data.rt_audio_adjusted = data.rt - (this.audio_end_time - this.audio_start_time);
+                    }
+                }
+            };
+        }
 
             centralData.forEach(trialData => {
                 const trialCreators = {
