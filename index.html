@@ -173,29 +173,47 @@
                     response_ends_trial: true,
                     stimulus_height: 550,
                     maintain_aspect_ratio: true,
-                    audio_start_time: null,
-                    audio_end_time: null,
+                    on_start: function(trial) {
+                        // Initialize audio-related properties
+                        trial.audio_start_time = null;
+                        trial.audio_end_time = null;
+                        trial.audio = null;
+                        trial.response_allowed = false;
+                    },
                     on_load: function(trial) {
-                        // Play audio and track its completion
+                        // Create audio only if path exists
                         if (trialData.audio_path) {
-                            const audio = new Audio(trialData.audio_path);
+                            // Create audio element
+                            trial.audio = document.createElement('audio');
+                            trial.audio.src = trialData.audio_path;
                             
-                            audio.onplay = () => {
-                                // Set a flag when audio starts playing
-                                trial.audio_start_time = performance.now();
-                            }
-                            
-                            audio.onended = () => {
-                                // Enable buttons when audio ends
+                            // Ensure audio is ready and playable
+                            trial.audio.addEventListener('canplaythrough', () => {
+                                // Attempt to play audio
+                                trial.audio.play().then(() => {
+                                    // Track start time when audio actually starts
+                                    trial.audio_start_time = performance.now();
+                                }).catch(error => {
+                                    console.error('Audio play failed:', error);
+                                });
+                            });
+            
+                            // When audio ends, enable buttons
+                            trial.audio.addEventListener('ended', () => {
+                                // Enable buttons
                                 const buttons = document.querySelectorAll('.jspsych-image-button-response-button');
                                 buttons.forEach(button => {
                                     button.style.cursor = 'pointer';
                                     button.style.pointerEvents = 'auto';
                                 });
+                                
+                                // Mark end time and allow response
                                 trial.audio_end_time = performance.now();
-                            }
-                            
-                            audio.play().catch(e => console.error('Audio playback failed:', e));
+                                trial.response_allowed = true;
+                            });
+                        } else {
+                            // If no audio, immediately allow response
+                            trial.response_allowed = true;
                         }
                     },
                     on_finish: function(data) {
@@ -207,16 +225,19 @@
                         data.overlay_image_2 = trialData.overlay_image_2;
                         data.expected_response = trialData.correct_response;
                         
+                        // Add audio timing information
+                        data.audio_path = trialData.audio_path;
+                        data.audio_start_time = this.audio_start_time;
+                        data.audio_end_time = this.audio_end_time;
+                        
                         // Calculate reaction time relative to audio end
                         if (data.rt !== null && this.audio_end_time && this.audio_start_time) {
-                            data.audio_start_time = this.audio_start_time;
-                            data.audio_end_time = this.audio_end_time;
                             data.rt_audio_adjusted = data.rt - (this.audio_end_time - this.audio_start_time);
                         }
                     }
                 };
             }
-
+            
             centralData.forEach(trialData => {
                 const trialCreators = {
                     'training': createTrainingTrial,
