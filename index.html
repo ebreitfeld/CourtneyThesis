@@ -87,15 +87,29 @@
 
         function createITITrial(backgroundImage) {
             return {
-                type: jsPsychHtmlKeyboardResponse,
-                stimulus: `
-                <div class="full-screen-stimulus" style="display: flex; justify-content: center; align-items: center; width: 100vw; height: 100vh; background-color: black;">
-                                <img src="${backgroundImage}" class="full-screen-stimulus">
-                </div>
-                `,
-                choices: "NO_KEYS",
+                type: jsPsychImageButtonResponse,  // Change to match test trial type
+                stimulus: backgroundImage,
+                stimulus_width: null,
+                stimulus_height: null,
+                maintain_aspect_ratio: true,
+                choices: ['Placeholder'],  // Needed for image-button-response
+                button_html: '<div></div>', // Invisible button
+                css_classes: ['full-screen-stimulus'],
+                response_ends_trial: false,
                 trial_duration: 500,
-                response_ends_trial: false
+                on_start: function(trial) {
+                    const style = document.createElement('style');
+                    style.innerHTML = `
+                        .jspsych-image-button-response-stimulus {
+                            max-width: 100%;
+                            max-height: 100vh;
+                            width: auto;
+                            height: auto;
+                            object-fit: contain;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
             };
         }
 
