@@ -167,8 +167,8 @@
                     stimulus: trialData.background_image,
                     choices: ['Left', 'Right'],
                     button_html: [
-                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 100px; bottom: 300px; cursor: not-allowed; height: 300px; pointer-events: none;">`,
-                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 100px; bottom: 300px; cursor: not-allowed; height: 300px; pointer-events: none;">`
+                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 100px; bottom: 300px; height: 300px;">`,
+                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 100px; bottom: 300px; height: 300px;">`
                     ],
                     response_ends_trial: true,
                     stimulus_height: 550,
@@ -176,17 +176,28 @@
                     audio_path: trialData.audio_path,
                     audio_start_time: null,
                     audio_end_time: null,
-                    response_allowed: false,
                     on_load: function() {
                         // Capture the current trial context
                         const trial = this;
                         
+                        // Disable buttons initially
+                        const buttons = document.querySelectorAll('.jspsych-image-button-response-button');
+                        buttons.forEach(button => {
+                            button.style.pointerEvents = 'none';
+                            button.style.cursor = 'not-allowed';
+                        });
+            
                         // Play audio only if path exists
                         if (trial.audio_path) {
                             // Create audio element
                             const audio = document.createElement('audio');
                             audio.src = trial.audio_path;
                             
+                            // Handle potential AudioContext issues
+                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            const source = audioContext.createMediaElementSource(audio);
+                            source.connect(audioContext.destination);
+            
                             // Ensure audio is ready and playable
                             audio.addEventListener('canplaythrough', () => {
                                 // Attempt to play audio
@@ -201,19 +212,20 @@
                             // When audio ends, enable buttons
                             audio.addEventListener('ended', () => {
                                 // Enable buttons
-                                const buttons = document.querySelectorAll('.jspsych-image-button-response-button');
                                 buttons.forEach(button => {
-                                    button.style.cursor = 'pointer';
                                     button.style.pointerEvents = 'auto';
+                                    button.style.cursor = 'pointer';
                                 });
                                 
-                                // Mark end time and allow response
+                                // Mark end time
                                 trial.audio_end_time = performance.now();
-                                trial.response_allowed = true;
                             });
                         } else {
-                            // If no audio, immediately allow response
-                            trial.response_allowed = true;
+                            // If no audio, immediately enable buttons
+                            buttons.forEach(button => {
+                                button.style.pointerEvents = 'auto';
+                                button.style.cursor = 'pointer';
+                            });
                         }
                     },
                     on_finish: function(data) {
