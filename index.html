@@ -13,13 +13,32 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.2.0/papaparse.min.js"></script>
     <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
     <link href="https://unpkg.com/jspsych@7.3.3/css/jspsych.css" rel="stylesheet" type="text/css" />
-        <style>
-        body, html {
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             background-color: black !important;
             color: white !important;
         }
         #jspsych-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
             background-color: black !important;
+        }
+        .full-screen-stimulus {
+            max-width: 100%;
+            max-height: 100vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
         }
     </style>
 </head>
@@ -70,8 +89,8 @@
             return {
                 type: jsPsychHtmlKeyboardResponse,
                 stimulus: `
-                    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw;">
-                        <img src="${backgroundImage}" style="height: 550px; object-fit: cover;">
+                    <div style="display: flex; justify-content: center; align-items: center; width: 100vw; height: 100vh; background-color: black;">
+                        <img src="${backgroundImage}" style="max-width: 100%; max-height: 100vh; object-fit: contain;">
                     </div>
                 `,
                 choices: "NO_KEYS",
@@ -109,6 +128,7 @@
                     autoplay: true,
                     controls: false,
                     trial_ends_after_video: true,
+                    css_classes: ['full-screen-stimulus'],
                     on_start: function(trial) {
                         if (trialData.audio_path) {
                             playAudio(trialData.audio_path);
@@ -126,6 +146,9 @@
                 return {
                     type: jsPsychImageButtonResponse,
                     stimulus: trialData.image_path,
+                    stimulus_width: null,
+                    stimulus_height: null,
+                    maintain_aspect_ratio: true,
                     choices: ['Click here'],
                     button_html: `<button class="jspsych-btn" 
                         style="position: absolute; 
@@ -138,17 +161,21 @@
                         border: none !important;
                         outline: none !important;
                         box-shadow: none !important;"></button>`,
-                    css_classes: ['custom-trial'],
+                    css_classes: ['custom-trial', 'full-screen-stimulus'],
                     response_ends_trial: true,
-                    stimulus_height: "550",
-                    maintain_aspect_ratio: true,
                     on_start: function(trial) {
                         if (trialData.audio_path) {
                             playAudio(trialData.audio_path);
                         }
-                        // Add custom CSS
                         const style = document.createElement('style');
                         style.innerHTML = `
+                            .custom-trial img {
+                                max-width: 100%;
+                                max-height: 100vh;
+                                width: auto;
+                                height: auto;
+                                object-fit: contain;
+                            }
                             .custom-trial button.jspsych-btn {
                                 opacity: 0 !important;
                                 background-color: transparent !important;
@@ -179,63 +206,53 @@
                 return {
                     type: jsPsychImageButtonResponse,
                     stimulus: trialData.background_image,
+                    stimulus_width: null,
+                    stimulus_height: null,
+                    maintain_aspect_ratio: true,
                     choices: ['Left', 'Right'],
                     button_html: [
-                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 100px; bottom: 300px; height: 300px;">`,
-                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 100px; bottom: 300px; height: 300px;">`
+                        `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 10%; bottom: 20%; max-height: 40vh; object-fit: contain;">`,
+                        `<img src="${trialData.overlay_image_2}" style="position: absolute; right: 10%; bottom: 20%; max-height: 40vh; object-fit: contain;">`
                     ],
                     response_ends_trial: true,
-                    stimulus_height: 550,
-                    maintain_aspect_ratio: true,
+                    css_classes: ['full-screen-stimulus'],
                     audio_path: trialData.audio_path,
                     audio_start_time: null,
                     audio_end_time: null,
                     on_load: function() {
-                        // Capture the current trial context
                         const trial = this;
                         
-                        // Disable buttons initially
                         const buttons = document.querySelectorAll('.jspsych-image-button-response-button');
                         buttons.forEach(button => {
                             button.style.pointerEvents = 'none';
                             button.style.cursor = 'not-allowed';
                         });
             
-                        // Play audio only if path exists
                         if (trial.audio_path) {
-                            // Create audio element
                             const audio = document.createElement('audio');
                             audio.src = trial.audio_path;
                             
-                            // Handle potential AudioContext issues
                             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                             const source = audioContext.createMediaElementSource(audio);
                             source.connect(audioContext.destination);
             
-                            // Ensure audio is ready and playable
                             audio.addEventListener('canplaythrough', () => {
-                                // Attempt to play audio
                                 audio.play().then(() => {
-                                    // Track start time when audio actually starts
                                     trial.audio_start_time = performance.now();
                                 }).catch(error => {
                                     console.error('Audio play failed:', error);
                                 });
                             });
             
-                            // When audio ends, enable buttons
                             audio.addEventListener('ended', () => {
-                                // Enable buttons
                                 buttons.forEach(button => {
                                     button.style.pointerEvents = 'auto';
                                     button.style.cursor = 'pointer';
                                 });
                                 
-                                // Mark end time
                                 trial.audio_end_time = performance.now();
                             });
                         } else {
-                            // If no audio, immediately enable buttons
                             buttons.forEach(button => {
                                 button.style.pointerEvents = 'auto';
                                 button.style.cursor = 'pointer';
@@ -251,12 +268,10 @@
                         data.overlay_image_2 = trialData.overlay_image_2;
                         data.expected_response = trialData.correct_response;
                         
-                        // Add audio timing information
                         data.audio_path = trialData.audio_path;
                         data.audio_start_time = this.audio_start_time;
                         data.audio_end_time = this.audio_end_time;
                         
-                        // Calculate reaction time relative to audio end
                         if (data.rt !== null && this.audio_end_time && this.audio_start_time) {
                             data.rt_audio_adjusted = data.rt - (this.audio_end_time - this.audio_start_time);
                         }
@@ -275,15 +290,11 @@
                 
                 const createTrial = trialCreators[trialData.trial_type];
                 if (createTrial) {
-                    // Add the trial
                     timeline.push(createTrial(trialData));
                     
-                    // Add ITI only after test trials, except the last trial
                     if (trialData.trial_type === 'test') {
-                        // If this is a test trial, store its background
                         lastTestBackground = trialData.background_image;
                         
-                        // Add ITI after this test trial, but not after the very last trial
                         if (index < centralData.length - 1) {
                             timeline.push(createITITrial(lastTestBackground));
                         }
@@ -293,17 +304,15 @@
                 }
             });
 
-            // Save data using DataPipe
-              const save_data = {
+            const save_data = {
                 type: jsPsychPipe,
                 action: "save",
                 experiment_id: "PYbvnSUEzFsj",
                 filename: filename,
                 data_string: ()=>jsPsych.data.get().csv()
-              };
+            };
             timeline.push(save_data);
 
-            // Start the experiment
             jsPsych.run(timeline);
         }
     </script>
