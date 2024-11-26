@@ -69,7 +69,11 @@
         function createITITrial(backgroundImage) {
             return {
                 type: jsPsychHtmlKeyboardResponse,
-                stimulus: `<img src="${backgroundImage}" style="height: 550px; position: absolute; top: 0; left: 0; object-fit: cover;">`,
+                stimulus: `
+                    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw;">
+                        <img src="${backgroundImage}" style="height: 550px; object-fit: cover;">
+                    </div>
+                `,
                 choices: "NO_KEYS",
                 trial_duration: 500,
                 response_ends_trial: false
