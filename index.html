@@ -89,9 +89,9 @@
             return {
                 type: jsPsychHtmlKeyboardResponse,
                 stimulus: `
-                    <div style="display: flex; justify-content: center; align-items: center; width: 100vw; height: 100vh; background-color: black;">
-                        <img src="${backgroundImage}" style="max-width: 100%; max-height: 100vh; object-fit: contain;">
-                    </div>
+                <div class="full-screen-stimulus" style="display: flex; justify-content: center; align-items: center; width: 100vw; height: 100vh; background-color: black;">
+                                <img src="${backgroundImage}" class="full-screen-stimulus">
+                </div>
                 `,
                 choices: "NO_KEYS",
                 trial_duration: 500,
