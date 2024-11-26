@@ -173,24 +173,24 @@
                     response_ends_trial: true,
                     stimulus_height: 550,
                     maintain_aspect_ratio: true,
-                    on_start: function(trial) {
-                        // Initialize audio-related properties
-                        trial.audio_start_time = null;
-                        trial.audio_end_time = null;
-                        trial.audio = null;
-                        trial.response_allowed = false;
-                    },
-                    on_load: function(trial) {
-                        // Create audio only if path exists
-                        if (trialData.audio_path) {
+                    audio_path: trialData.audio_path,
+                    audio_start_time: null,
+                    audio_end_time: null,
+                    response_allowed: false,
+                    on_load: function() {
+                        // Capture the current trial context
+                        const trial = this;
+                        
+                        // Play audio only if path exists
+                        if (trial.audio_path) {
                             // Create audio element
-                            trial.audio = document.createElement('audio');
-                            trial.audio.src = trialData.audio_path;
+                            const audio = document.createElement('audio');
+                            audio.src = trial.audio_path;
                             
                             // Ensure audio is ready and playable
-                            trial.audio.addEventListener('canplaythrough', () => {
+                            audio.addEventListener('canplaythrough', () => {
                                 // Attempt to play audio
-                                trial.audio.play().then(() => {
+                                audio.play().then(() => {
                                     // Track start time when audio actually starts
                                     trial.audio_start_time = performance.now();
                                 }).catch(error => {
@@ -199,7 +199,7 @@
                             });
             
                             // When audio ends, enable buttons
-                            trial.audio.addEventListener('ended', () => {
+                            audio.addEventListener('ended', () => {
                                 // Enable buttons
                                 const buttons = document.querySelectorAll('.jspsych-image-button-response-button');
                                 buttons.forEach(button => {
