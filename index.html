@@ -138,13 +138,36 @@
                     choices: "NO_KEYS",
                     response_ends_trial: false,
                     width: '100%',
-                    height: '100vh',
+                    height: '100%',
                     maintain_aspect_ratio: true,
                     autoplay: true,
                     controls: false,
                     trial_ends_after_video: true,
-                    css_classes: ['full-screen-stimulus'],
+                    css_classes: ['full-screen-video'],
                     on_start: function(trial) {
+                        // Add a style to ensure full screen video
+                        const style = document.createElement('style');
+                        style.innerHTML = `
+                            .full-screen-video {
+                                width: 100%;
+                                height: 100vh;
+                                object-fit: contain;
+                                max-width: 100%;
+                                max-height: 100vh;
+                                position: absolute;
+                                top: 0;
+                                left: 0;
+                            }
+                            .jspsych-video-keyboard-response-stimulus {
+                                width: 100%;
+                                height: 100vh;
+                                object-fit: contain;
+                                max-width: 100%;
+                                max-height: 100vh;
+                            }
+                        `;
+                        document.head.appendChild(style);
+            
                         if (trialData.audio_path) {
                             playAudio(trialData.audio_path);
                         }
