@@ -187,7 +187,6 @@
                     stimulus_width: null,
                     stimulus_height: null,
                     maintain_aspect_ratio: true,
-                    css_classes: ['full-screen-stimulus'],
                     choices: ['Click here'],
                     button_html: `<button class="jspsych-btn" 
                         style="position: absolute; 
@@ -200,7 +199,7 @@
                         border: none !important;
                         outline: none !important;
                         box-shadow: none !important;"></button>`,
-                    css_classes: ['custom-trial', 'full-screen-stimulus'],
+                    css_classes: ['custom-trial', 'practice-image'],
                     response_ends_trial: true,
                     on_start: function(trial) {
                         if (trialData.audio_path) {
@@ -208,12 +207,18 @@
                         }
                         const style = document.createElement('style');
                         style.innerHTML = `
-                            .custom-trial img {
-                                max-width: 100%;
-                                max-height: 100vh;
-                                width: auto;
-                                height: auto;
+                            .practice-image {
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                width: 100%;
+                                height: 100vh;
+                            }
+                            .practice-image img {
+                                max-width: 80%; /* Limit image width */
+                                max-height: 80%; /* Limit image height */
                                 object-fit: contain;
+                                margin: 0 auto;
                             }
                             .custom-trial button.jspsych-btn {
                                 opacity: 0 !important;
@@ -240,7 +245,7 @@
                     }
                 };
             }
-
+            
             function createTestTrial(trialData) {
                 return {
                     type: jsPsychImageButtonResponse,
