@@ -184,7 +184,7 @@
                 return {
                     type: jsPsychImageButtonResponse,
                     stimulus: trialData.image_path,
-                    stimulus_width: window.innerWidth,
+                    stimulus_height: "550",
                     maintain_aspect_ratio: true,
                     choices: ['Click here'],
                     button_html: `<button class="jspsych-btn" 
@@ -206,24 +206,6 @@
                         }
                         const style = document.createElement('style');
                         style.innerHTML = `
-                            .practice-image-container {
-                                position: absolute;
-                                width: 100%;
-                                height: 100vh;
-                                top: 0;
-                                left: 0;
-                                overflow: hidden;
-                            }
-                            .practice-image-container img {
-                                position: absolute;
-                                left: 0;
-                                top: 0;
-                                width: 100vw;
-                                height: auto;
-                                object-fit: contain;
-                                max-width: 100%;
-                                max-height: 100%;
-                            }
                             .custom-trial button.jspsych-btn {
                                 opacity: 0 !important;
                                 background-color: transparent !important;
