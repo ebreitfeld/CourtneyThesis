@@ -34,11 +34,11 @@
             background-color: black !important;
         }
         .full-screen-stimulus {
+            width: 100%;
+            height: 100vh;
+            object-fit: contain;
             max-width: 100%;
             max-height: 100vh;
-            width: auto;
-            height: auto;
-            object-fit: contain;
         }
     </style>
 </head>
@@ -138,7 +138,8 @@
                     choices: "NO_KEYS",
                     response_ends_trial: false,
                     width: '100%',
-                    height: '100%',
+                    height: '100vh',
+                    maintain_aspect_ratio: true,
                     autoplay: true,
                     controls: false,
                     trial_ends_after_video: true,
@@ -163,6 +164,7 @@
                     stimulus_width: null,
                     stimulus_height: null,
                     maintain_aspect_ratio: true,
+                    css_classes: ['full-screen-stimulus'],
                     choices: ['Click here'],
                     button_html: `<button class="jspsych-btn" 
                         style="position: absolute; 
@@ -223,6 +225,7 @@
                     stimulus_width: null,
                     stimulus_height: null,
                     maintain_aspect_ratio: true,
+                    css_classes: ['full-screen-stimulus'],
                     choices: ['Left', 'Right'],
                     button_html: [
                         `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 10%; bottom: 20%; max-height: 40vh; object-fit: contain;">`,
