@@ -184,7 +184,7 @@
                 return {
                     type: jsPsychImageButtonResponse,
                     stimulus: trialData.image_path,
-                    stimulus_width: window.innerWidth, // Set width to screen width
+                    stimulus_width: window.innerWidth,
                     maintain_aspect_ratio: true,
                     choices: ['Click here'],
                     button_html: `<button class="jspsych-btn" 
@@ -218,6 +218,8 @@
                                 width: 100%;
                                 height: auto;
                                 object-fit: contain;
+                                margin: 0 auto; /* Ensure horizontal centering */
+                                display: block; /* Allow margin auto to work */
                             }
                             .custom-trial button.jspsych-btn {
                                 opacity: 0 !important;
@@ -247,7 +249,6 @@
                     stimulus_width: null,
                     stimulus_height: null,
                     maintain_aspect_ratio: true,
-                    css_classes: ['full-screen-stimulus'],
                     choices: ['Left', 'Right'],
                     button_html: [
                         `<img src="${trialData.overlay_image_1}" style="position: absolute; left: 10%; bottom: 20%; max-height: 40vh; object-fit: contain;">`,
@@ -255,43 +256,57 @@
                     ],
                     response_ends_trial: true,
                     css_classes: ['full-screen-stimulus'],
-                    audio_path: trialData.audio_path,
-                    audio_start_time: null,
-                    audio_end_time: null,
+                    on_start: function(trial) {
+                        // Ensure audio is added as a property of the trial
+                        trial.audio_path = trialData.audio_path;
+                        trial.audio_start_time = null;
+                        trial.audio_end_time = null;
+                    },
                     on_load: function() {
                         const trial = this;
-                        
                         const buttons = document.querySelectorAll('.jspsych-image-button-response-button');
+                        
+                        // Disable buttons initially
                         buttons.forEach(button => {
                             button.style.pointerEvents = 'none';
                             button.style.cursor = 'not-allowed';
                         });
             
+                        // Play audio if path exists
                         if (trial.audio_path) {
-                            const audio = document.createElement('audio');
-                            audio.src = trial.audio_path;
+                            // Create audio element
+                            const audio = new Audio(trial.audio_path);
                             
-                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                            const source = audioContext.createMediaElementSource(audio);
-                            source.connect(audioContext.destination);
+                            audio.oncanplaythrough = () => {
+                                audio.play()
+                                    .then(() => {
+                                        trial.audio_start_time = performance.now();
+                                    })
+                                    .catch(error => {
+                                        console.error('Audio play failed:', error);
+                                    });
+                            };
             
-                            audio.addEventListener('canplaythrough', () => {
-                                audio.play().then(() => {
-                                    trial.audio_start_time = performance.now();
-                                }).catch(error => {
-                                    console.error('Audio play failed:', error);
-                                });
-                            });
-            
-                            audio.addEventListener('ended', () => {
+                            audio.onended = () => {
+                                // Enable buttons when audio ends
                                 buttons.forEach(button => {
                                     button.style.pointerEvents = 'auto';
                                     button.style.cursor = 'pointer';
                                 });
                                 
                                 trial.audio_end_time = performance.now();
-                            });
+                            };
+            
+                            audio.onerror = (e) => {
+                                console.error('Audio error:', e);
+                                // Enable buttons even if audio fails
+                                buttons.forEach(button => {
+                                    button.style.pointerEvents = 'auto';
+                                    button.style.cursor = 'pointer';
+                                });
+                            };
                         } else {
+                            // If no audio, enable buttons immediately
                             buttons.forEach(button => {
                                 button.style.pointerEvents = 'auto';
                                 button.style.cursor = 'pointer';
@@ -307,7 +322,7 @@
                         data.overlay_image_2 = trialData.overlay_image_2;
                         data.expected_response = trialData.correct_response;
                         
-                        data.audio_path = trialData.audio_path;
+                        data.audio_path = this.audio_path;
                         data.audio_start_time = this.audio_start_time;
                         data.audio_end_time = this.audio_end_time;
                         
