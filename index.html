@@ -184,8 +184,8 @@
                 return {
                     type: jsPsychImageButtonResponse,
                     stimulus: trialData.image_path,
-                    stimulus_width: window.innerWidth * 0.6, // Constrain to 60% of screen width
-                    stimulus_height: window.innerHeight * 0.6, // Constrain to 60% of screen height
+                    stimulus_width: null,
+                    stimulus_height: null,
                     maintain_aspect_ratio: true,
                     choices: ['Click here'],
                     button_html: `<button class="jspsych-btn" 
@@ -216,10 +216,11 @@
                                 overflow: hidden;
                             }
                             .practice-image-container img {
-                                max-width: 60%;
-                                max-height: 60%;
+                                max-width: 90%;
+                                max-height: 90%;
+                                width: auto;
+                                height: auto;
                                 object-fit: contain;
-                                margin: 0 auto;
                             }
                             .custom-trial button.jspsych-btn {
                                 opacity: 0 !important;
