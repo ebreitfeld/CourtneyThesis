@@ -184,7 +184,7 @@
                 return {
                     type: jsPsychImageButtonResponse,
                     stimulus: trialData.image_path,
-                    stimulus_height: "550",
+                    stimulus_height: "575",
                     maintain_aspect_ratio: true,
                     choices: ['Click here'],
                     button_html: `<button class="jspsych-btn" 
@@ -198,7 +198,7 @@
                         border: none !important;
                         outline: none !important;
                         box-shadow: none !important;"></button>`,
-                    css_classes: ['custom-trial', 'practice-image-container'],
+                    css_classes: ['custom-trial', 'full-screen-stimulus'],
                     response_ends_trial: true,
                     on_start: function(trial) {
                         if (trialData.audio_path) {
