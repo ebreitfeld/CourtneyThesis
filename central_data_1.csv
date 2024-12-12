@@ -32,3 +32,4 @@ test,audio/Manu_audio.wav,,,,,,,image/rug_background.png,image/Fiffin.png,image/
 test,audio/Koba_audio.wav,,,,,,,image/rug_background.png,image/Koba.png,image/Shill.png,button1
 test,audio/Fiffin_audio.wav,,,,,,,image/rug_background.png,image/Manu.png,image/Fiffin.png,button2
 test,audio/Manu_audio.wav,,,,,,,image/rug_background.png,image/Fiffin.png,image/Manu.png,button2
+test,,,,,,,,image/rug_background.png,image/Peer_1.png,image/Peer_2.png,button2
