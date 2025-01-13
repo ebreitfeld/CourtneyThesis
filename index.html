@@ -176,6 +176,9 @@
                         data.trial_type = 'training';
                         data.video_path = trialData.video_path;
                         data.audio_path = trialData.audio_path;
+                        data.subject = subjectNumber;
+                        data.order = orderFile;
+                        data.condition = trialData.condition;
                     }
                 };
             }
@@ -223,6 +226,9 @@
                             x: trialData.button_position_x,
                             y: trialData.button_position_y
                         };
+                        data.subject = subjectNumber;
+                        data.order = orderFile;
+                        data.condition = trialData.condition;
                     }
                 };
             }
@@ -314,6 +320,9 @@
                         if (data.rt !== null && this.audio_end_time && this.audio_start_time) {
                             data.rt_audio_adjusted = data.rt - (this.audio_end_time - this.audio_start_time);
                         }
+                        data.subject = subjectNumber;
+                        data.order = orderFile;
+                        data.condition = trialData.condition;
                     }
                 };
             }
