@@ -68,67 +68,28 @@
 
         const csvFilePath = `https://ebreitfeld.github.io/CourtneyThesis/central_data_${orderFile}.csv`;
 
-        // Function to extract all media files from trial data
+        // Helper function definitions (move these outside of Papa.parse)
+        function playAudio(audioFilePath) {
+            if (!audioFilePath) return null;
+            const audio = new Audio(audioFilePath);
+            audio.onerror = () => console.error(`Error loading audio: ${audioFilePath}`);
+            return audio.play().catch(e => console.error('Audio playback failed:', e));
+        }
+
         function getMediaFiles(data) {
             const mediaFiles = new Set();
             
             data.forEach(trial => {
-                // Add images
                 if (trial.image_path) mediaFiles.add(trial.image_path);
                 if (trial.background_image) mediaFiles.add(trial.background_image);
                 if (trial.overlay_image_1) mediaFiles.add(trial.overlay_image_1);
                 if (trial.overlay_image_2) mediaFiles.add(trial.overlay_image_2);
-                
-                // Add videos
                 if (trial.video_path) mediaFiles.add(trial.video_path);
-                
-                // Add audio
                 if (trial.audio_path) mediaFiles.add(trial.audio_path);
             });
             
             return Array.from(mediaFiles);
         }
-
-        Papa.parse(csvFilePath, {
-            download: true,
-            header: true,
-            dynamicTyping: true,
-            complete: function(results) {
-                if (results.errors.length > 0) {
-                    console.error('CSV parsing errors:', results.errors);
-                    alert('Error loading experiment data');
-                    return;
-                }
-                
-                // Get all media files to preload
-                const mediaFiles = getMediaFiles(results.data);
-                
-                // Create preload trial
-                const preload = {
-                    type: jsPsychPreload,
-                    images: mediaFiles.filter(file => file && file.match(/\.(jpg|jpeg|png|gif|bmp)$/i)),
-                    video: mediaFiles.filter(file => file && file.match(/\.(mp4|webm|ogg)$/i)),
-                    audio: mediaFiles.filter(file => file && file.match(/\.(mp3|wav|ogg)$/i)),
-                    message: "Loading experiment materials...",
-                    show_progress_bar: true,
-                    continue_after_error: true,
-                    error_message: "Error loading materials. Some content may be missing. Click to continue.",
-                    on_error: function(file) {
-                        console.error('Error loading file:', file);
-                    }
-                };
-                
-                // Create timeline with preload as first trial
-                const timeline = [preload];
-                
-                // Add welcome trial
-                const welcome = {
-                    type: jsPsychFullscreen,
-                    message: "Welcome! Click 'Start' to Play.",
-                    button_label: "Start",
-                    delay_after: 250
-                };
-                timeline.push(welcome);
 
         function createITITrial(backgroundImage) {
             return {
@@ -158,17 +119,7 @@
             };
         }
 
-        function runExperiment(centralData) {
-            const timeline = [];
-
-            function playAudio(audioFilePath) {
-                if (!audioFilePath) return null;
-                const audio = new Audio(audioFilePath);
-                audio.onerror = () => console.error(`Error loading audio: ${audioFilePath}`);
-                return audio.play().catch(e => console.error('Audio playback failed:', e));
-            }
-
-            function createTrainingTrial(trialData) {
+        function createTrainingTrial(trialData) {
                 return {
                     type: jsPsychVideoKeyboardResponse,
                     stimulus: [trialData.video_path],
@@ -363,10 +314,53 @@
                     }
                 };
             }
+
+
+        // Main Papa.parse call
+        Papa.parse(csvFilePath, {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            complete: function(results) {
+                if (results.errors.length > 0) {
+                    console.error('CSV parsing errors:', results.errors);
+                    alert('Error loading experiment data');
+                    return;
+                }
+                
+                // Get all media files to preload
+                const mediaFiles = getMediaFiles(results.data);
+                
+                // Create preload trial
+                const preload = {
+                    type: jsPsychPreload,
+                    images: mediaFiles.filter(file => file && file.match(/\.(jpg|jpeg|png|gif|bmp)$/i)),
+                    video: mediaFiles.filter(file => file && file.match(/\.(mp4|webm|ogg)$/i)),
+                    audio: mediaFiles.filter(file => file && file.match(/\.(mp3|wav|ogg)$/i)),
+                    message: "Loading experiment materials...",
+                    show_progress_bar: true,
+                    continue_after_error: true,
+                    error_message: "Error loading materials. Some content may be missing. Click to continue.",
+                    on_error: function(file) {
+                        console.error('Error loading file:', file);
+                    }
+                };
+                
+                // Create timeline with preload as first trial
+                const timeline = [preload];
+                
+                // Add welcome trial
+                const welcome = {
+                    type: jsPsychFullscreen,
+                    message: "Welcome! Click 'Start' to Play.",
+                    button_label: "Start",
+                    delay_after: 250
+                };
+                timeline.push(welcome);
             
             let lastTestBackground = null;
         
-            centralData.forEach((trialData, index) => {
+            results.data.forEach((trialData, index) => {
                 const trialCreators = {
                     'training': createTrainingTrial,
                     'practice': createPracticeTrial,
@@ -399,7 +393,12 @@
             timeline.push(save_data);
 
             jsPsych.run(timeline);
-        }
+        },
+            error: function(error) {
+                console.error('CSV loading error:', error);
+                alert('Error loading experiment data');
+            }
+        });
     </script>
 </body>
 </html>
