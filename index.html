@@ -361,39 +361,40 @@
             let lastTestBackground = null;
         
             results.data.forEach((trialData, index) => {
-                const trialCreators = {
-                    'training': createTrainingTrial,
-                    'practice': createPracticeTrial,
-                    'test': createTestTrial
-                };
-                
-                const createTrial = trialCreators[trialData.trial_type];
-                if (createTrial) {
-                    timeline.push(createTrial(trialData));
+                    const trialCreators = {
+                        'training': createTrainingTrial,
+                        'practice': createPracticeTrial,
+                        'test': createTestTrial
+                    };
                     
-                    if (trialData.trial_type === 'test') {
-                        lastTestBackground = trialData.background_image;
+                    const createTrial = trialCreators[trialData.trial_type];
+                    if (createTrial) {
+                        timeline.push(createTrial(trialData));
                         
-                        if (index < centralData.length - 1) {
-                            timeline.push(createITITrial(lastTestBackground));
+                        if (trialData.trial_type === 'test') {
+                            lastTestBackground = trialData.background_image;
+                            
+                            if (index < results.data.length - 1) {
+                                timeline.push(createITITrial(lastTestBackground));
+                            }
                         }
+                    } else {
+                        console.error(`Unknown trial type: ${trialData.trial_type}`);
                     }
-                } else {
-                    console.error(`Unknown trial type: ${trialData.trial_type}`);
-                }
-            });
+                });
 
-            const save_data = {
-                type: jsPsychPipe,
-                action: "save",
-                experiment_id: "PYbvnSUEzFsj",
-                filename: filename,
-                data_string: ()=>jsPsych.data.get().csv()
-            };
-            timeline.push(save_data);
+                const save_data = {
+                    type: jsPsychPipe,
+                    action: "save",
+                    experiment_id: "PYbvnSUEzFsj",
+                    filename: filename,
+                    data_string: ()=>jsPsych.data.get().csv()
+                };
+                timeline.push(save_data);
 
-            jsPsych.run(timeline);
-        },
+                // Run the experiment
+                jsPsych.run(timeline);
+            },
             error: function(error) {
                 console.error('CSV loading error:', error);
                 alert('Error loading experiment data');
