@@ -10,10 +10,12 @@
     <script src="https://unpkg.com/@jspsych/plugin-image-button-response@1.1.2"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
     <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-preload@1.1.2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.2.0/papaparse.min.js"></script>
     <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
     <link href="https://unpkg.com/jspsych@7.3.3/css/jspsych.css" rel="stylesheet" type="text/css" />
     <style>
+        /* Your existing styles remain the same */
         html, body {
             margin: 0;
             padding: 0;
@@ -61,11 +63,31 @@
             throw new Error("Missing subject or order information.");
         }
 
-        // Generate a filename based on subject and order
         const currentDate = new Date();
         const filename = `subject_${subjectNumber}_order_${orderFile}_${currentDate.toISOString().slice(0, 19).replace('T', '_')}.csv`;
 
         const csvFilePath = `https://ebreitfeld.github.io/CourtneyThesis/central_data_${orderFile}.csv`;
+
+        // Function to extract all media files from trial data
+        function getMediaFiles(data) {
+            const mediaFiles = new Set();
+            
+            data.forEach(trial => {
+                // Add images
+                if (trial.image_path) mediaFiles.add(trial.image_path);
+                if (trial.background_image) mediaFiles.add(trial.background_image);
+                if (trial.overlay_image_1) mediaFiles.add(trial.overlay_image_1);
+                if (trial.overlay_image_2) mediaFiles.add(trial.overlay_image_2);
+                
+                // Add videos
+                if (trial.video_path) mediaFiles.add(trial.video_path);
+                
+                // Add audio
+                if (trial.audio_path) mediaFiles.add(trial.audio_path);
+            });
+            
+            return Array.from(mediaFiles);
+        }
 
         Papa.parse(csvFilePath, {
             download: true,
@@ -77,13 +99,36 @@
                     alert('Error loading experiment data');
                     return;
                 }
-                runExperiment(results.data);
-            },
-            error: function(error) {
-                console.error('CSV loading error:', error);
-                alert('Error loading experiment data');
-            }
-        });
+                
+                // Get all media files to preload
+                const mediaFiles = getMediaFiles(results.data);
+                
+                // Create preload trial
+                const preload = {
+                    type: jsPsychPreload,
+                    images: mediaFiles.filter(file => file && file.match(/\.(jpg|jpeg|png|gif|bmp)$/i)),
+                    video: mediaFiles.filter(file => file && file.match(/\.(mp4|webm|ogg)$/i)),
+                    audio: mediaFiles.filter(file => file && file.match(/\.(mp3|wav|ogg)$/i)),
+                    message: "Loading experiment materials...",
+                    show_progress_bar: true,
+                    continue_after_error: true,
+                    error_message: "Error loading materials. Some content may be missing. Click to continue.",
+                    on_error: function(file) {
+                        console.error('Error loading file:', file);
+                    }
+                };
+                
+                // Create timeline with preload as first trial
+                const timeline = [preload];
+                
+                // Add welcome trial
+                const welcome = {
+                    type: jsPsychFullscreen,
+                    message: "Welcome! Click 'Start' to Play.",
+                    button_label: "Start",
+                    delay_after: 250
+                };
+                timeline.push(welcome);
 
         function createITITrial(backgroundImage) {
             return {
@@ -122,14 +167,6 @@
                 audio.onerror = () => console.error(`Error loading audio: ${audioFilePath}`);
                 return audio.play().catch(e => console.error('Audio playback failed:', e));
             }
-
-            const welcome = {
-                type: jsPsychFullscreen,
-                message: "Welcome! Click 'Start' to Play.",
-                button_label: "Start",
-                delay_after: 250
-            };
-            timeline.push(welcome);
 
             function createTrainingTrial(trialData) {
                 return {
